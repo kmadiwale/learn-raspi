@@ -33,7 +33,7 @@ def lab_temp():
 def read_data():
 
         import sqlite3
-        conn=sqlite3.connect('/home/pi/kedar/rpi3b/labs/dht.db')
+        conn=sqlite3.connect('/home/pi/rpi3b/dht/dht.db')
         curs=conn.cursor()
         
 	curs.execute("SELECT * FROM temperatures")
@@ -57,7 +57,7 @@ def read_data_by_dates():
                 toDateStr = time.strftime("%Y-%m-%d %H:%M")               
 
         import sqlite3
-        conn=sqlite3.connect('/home/pi/kedar/rpi3b/labs/dht.db')
+        conn=sqlite3.connect('/home/pi/rpi3b/dht/dht.db')
         curs=conn.cursor()
         
 	curs.execute("SELECT * FROM temperatures WHERE read_datetime BETWEEN ? AND ?", (fromDateStr, toDateStr))

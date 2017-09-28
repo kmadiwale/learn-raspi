@@ -6,7 +6,7 @@ import Adafruit_DHT
 # import random
 
 def save_data(sensor_id, temp, hum):
-        conn=sqlite3.connect('/home/pi/kedar/rpi3b/labs/dht.db')  #It is important to provide an
+        conn=sqlite3.connect('/home/pi/rpi3b/dht/dht.db')  #It is important to provide an
                                                              #absolute path to the database
                                                              #file, otherwise Cron won't be
                                                              #able to find it!
