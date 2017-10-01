@@ -22,7 +22,7 @@ frmtr = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
 
 lhdlr.setFormatter(frmtr)
 logger.addHandler(lhdlr)
-logger.setLevel(logging.WARNING)
+logger.setLevel(logging.DEBUG)
 
 def save(pir_id, img2Save):
 	logger.info("saving data, please wait...")
@@ -67,7 +67,12 @@ def notify(from_id, email_id, subject, smtp, port, phrase, pir_id, img, capTime)
 #program begin
 if (len(sys.argv) > 1):
 	away = isinstance(sys.argv[1], bool)
-	logger.info("away, notification:true")
+	if (away):
+		away = True
+		logger.info("away, notification:true")
+	else:
+		away = False
+		logger.info("not away, notification:false")
 else:
 	away = False
 	logger.error("not away, notification:false")
