@@ -7,6 +7,7 @@ import os, sys
 import sqlite3
 import smtplib
 import configparser
+import logging
 
 from email.MIMEMultipart import MIMEMultipart
 from email.MIMEText import MIMEText
@@ -14,28 +15,32 @@ from email.MIMEBase import MIMEBase
 from email import encoders
 
 sys.path.insert(0, "/usr/bin/raspistill")
-imgPath = '/home/pi/rpi3b/hs7/images/'
-pir=14
-buzz=15
-dts='%Y-%m-%d.%H-%M-%S'
+
+logger = logging.getLogger('casa')
+lhdlr = logging.FileHandler('/home/pi/rpi3b/hs7/casa.log')
+frmtr = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
+
+lhdlr.setFormatter(frmtr)
+logger.addHandler(lhdlr)
+logger.setLevel(logging.WARNING)
 
 def save(pir_id, img2Save):
-	print ("saving data, please wait...")
+	logger.info("saving data, please wait...")
 	conn=sqlite3.connect('/home/pi/rpi3b/hs7/intruder.db')  
         curs=conn.cursor()
         curs.execute("""INSERT INTO intruder values(datetime(CURRENT_TIMESTAMP, 'localtime'),(?), (?))""", (pir_id, img2Save))
         conn.commit()
         conn.close()
-	print ("movement logged")
+	logger.info("movement logged")
 
 
 def click(f, pir_id):
-	print("movement detected by " + pir_id + ", capturing image, hope you smiled: " + f)
+	logger.info("movement detected by " + pir_id + ", capturing image, hope you smiled: " + f)
 	os.system('raspistill -o ' + f + ' --nopreview --exposure sports --timeout 1')
 
 
 def notify(from_id, email_id, subject, smtp, port, phrase, pir_id, img, capTime):
-	print("notifying...")
+	logger.info("notifying...")
 	message = MIMEMultipart()
 	#build message
 	message['From'] = from_id
@@ -57,29 +62,35 @@ def notify(from_id, email_id, subject, smtp, port, phrase, pir_id, img, capTime)
 	text=message.as_string()
 	server.sendmail(from_id, email_id, text)
 	server.quit()
-	print("Please check your email for intruder attachment")
+	logger.info("Please check your email for intruder attachment")
 
 #program begin
 if (len(sys.argv) > 1):
 	away = isinstance(sys.argv[1], bool)
-	print("away, notification:true")
+	logger.info("away, notification:true")
 else:
 	away = False
-	print("not away, notification:false")
+	logger.error("not away, notification:false")
 
-GPIO.setmode(GPIO.BCM)
-GPIO.setup(pir, GPIO.IN)
-GPIO.setup(buzz, GPIO.OUT)
-GPIO.output(buzz, GPIO.LOW)
-
-time.sleep(60) #setting up the sensor
-print ("sensor is ready!")
+imgPath = '/home/pi/rpi3b/hs7/images/'
+dts='%Y-%m-%d.%H-%M-%S'
 
 config = configparser.ConfigParser()
 config.read('/home/pi/rpi3b/hs7/casa.ini')
 
+pir1=int(config.get('pi','pir1'))
+buzz=int(config.get('pi','buzz'))
+
+GPIO.setmode(GPIO.BCM)
+GPIO.setup(pir1, GPIO.IN)
+GPIO.setup(buzz, GPIO.OUT)
+GPIO.output(buzz, GPIO.LOW)
+
+time.sleep(60) #setting up the sensor
+logger.info("sensor is ready!")
+
 while True:
-	x=GPIO.input(pir)
+	x=GPIO.input(pir1)
 	if x==1:
 		GPIO.output(buzz, GPIO.HIGH)
 		captureTime = datetime.datetime.now().strftime(dts)
@@ -91,7 +102,9 @@ while True:
 			notify(config.get('mail','se_id'), config.get('mail','re_id'), config.get('mail', 'se_sub'), 
 			config.get('mail', 'se_pro'),config.get('mail', 'se_pro_port'), config.get('mail', 'se_phrase'), 
 			"PIR1", imgPath + fname, captureTime)
+		time.sleep(1) #pause for 1 second(s) before proceeding
+
 
 GPIO.cleanup()
-print("resources cleaned up")
+logger.info("resources cleaned up")
 
